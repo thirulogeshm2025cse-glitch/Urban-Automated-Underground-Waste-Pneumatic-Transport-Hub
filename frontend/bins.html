@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Waste Bins | Urban Waste Pneumatic Transport Hub</title>
+    <meta name="description" content="Manage pneumatic smart waste inlets, fill level telemetry, and automated classification.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>PNEUMA-HUB</h2>
+                    <span>Urban Automated Transport</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home Portal</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Live Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">Infrastructure Modules</div>
+                <a href="collection-points.html" class="nav-item">
+                    <span class="nav-icon">📍</span>
+                    <span>Collection Points</span>
+                </a>
+                <a href="bins.html" class="nav-item active">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Smart Waste Bins</span>
+                </a>
+                <a href="pipelines.html" class="nav-item">
+                    <span class="nav-icon">🚇</span>
+                    <span>Pneumatic Pipelines</span>
+                </a>
+                <a href="hubs.html" class="nav-item">
+                    <span class="nav-icon">🏢</span>
+                    <span>Transport Hubs</span>
+                </a>
+
+                <div class="nav-section-title">Operations & Safety</div>
+                <a href="transports.html" class="nav-item">
+                    <span class="nav-icon">🚀</span>
+                    <span>Waste Transports</span>
+                </a>
+                <a href="processing.html" class="nav-item">
+                    <span class="nav-icon">♻️</span>
+                    <span>Waste Processing</span>
+                </a>
+                <a href="maintenance.html" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Maintenance</span>
+                </a>
+                <a href="alerts.html" class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Active Alerts</span>
+                    <span class="nav-badge" id="sidebarAlertBadge" style="display:none;">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>MySQL Live</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--cyan-400); font-family: var(--font-mono);">8080/API</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Smart Waste Bin Management</h1>
+                        <p class="page-subtitle">Ultrasonic fill telemetry, auto-classification (Normal / Warning / Full), and pneumatic chute control</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-display" id="liveClock">--:--:--</div>
+                    <button class="btn btn-primary" onclick="openCreateBinModal()">
+                        <span>+</span> Register Smart Bin
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🗑️</span> Smart Inlet Chutes & Bins
+                            <span class="panel-title-badge" id="binsCountBadge">0 Bins</span>
+                        </div>
+                        <div class="panel-actions">
+                            <select id="filterWasteType" class="form-control" onchange="filterBins()" style="padding: 0.45rem 0.85rem;">
+                                <option value="">All Waste Types</option>
+                                <option value="ORGANIC">ORGANIC</option>
+                                <option value="RECYCLABLE">RECYCLABLE</option>
+                                <option value="PLASTIC">PLASTIC</option>
+                                <option value="PAPER">PAPER</option>
+                                <option value="GENERAL">GENERAL</option>
+                                <option value="HAZARDOUS">HAZARDOUS</option>
+                            </select>
+                            <select id="filterStatus" class="form-control" onchange="filterBins()" style="padding: 0.45rem 0.85rem;">
+                                <option value="">All Statuses</option>
+                                <option value="NORMAL">NORMAL (0-60%)</option>
+                                <option value="WARNING">WARNING (61-80%)</option>
+                                <option value="FULL">FULL (81-100%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Bin Code</th>
+                                    <th>Collection Point</th>
+                                    <th>Waste Category</th>
+                                    <th>Capacity</th>
+                                    <th>Current Waste</th>
+                                    <th style="min-width: 170px;">Fill Telemetry</th>
+                                    <th>Status</th>
+                                    <th>Last Emptied</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="binsTableBody">
+                                <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Loading bins telemetry...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create / Edit Bin Modal -->
+    <div class="modal-overlay" id="binModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="binModalTitle">Register New Smart Bin</h3>
+                <button class="modal-close" onclick="closeModal('binModal')">&times;</button>
+            </div>
+            <form id="binForm" onsubmit="saveBin(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="binId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="binCode">Bin Code *</label>
+                            <input type="text" id="binCode" class="form-control" placeholder="e.g. BIN011" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="binCpSelect">Collection Point *</label>
+                            <select id="binCpSelect" class="form-control" required>
+                                <option value="">Select Collection Point...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="binWasteType">Waste Type *</label>
+                            <select id="binWasteType" class="form-control" required>
+                                <option value="ORGANIC">ORGANIC</option>
+                                <option value="RECYCLABLE">RECYCLABLE</option>
+                                <option value="PLASTIC">PLASTIC</option>
+                                <option value="PAPER">PAPER</option>
+                                <option value="GENERAL">GENERAL</option>
+                                <option value="HAZARDOUS">HAZARDOUS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="binCapacity">Capacity (kg) *</label>
+                            <input type="number" step="0.1" min="1" id="binCapacity" class="form-control" placeholder="e.g. 500" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="binCurrentWaste">Current Waste Level (kg) *</label>
+                            <input type="number" step="0.1" min="0" id="binCurrentWaste" class="form-control" placeholder="e.g. 250" required>
+                            <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem;">
+                                Rule Engine: 0–60% = NORMAL | 61–80% = WARNING | 81–100% = FULL (Generates Safety Alert)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('binModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveBinBtn">Save Smart Bin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let allBins = [];
+        let allPoints = [];
+
+        async function initPage() {
+            try {
+                const [bins, points] = await Promise.all([
+                    apiRequest('/bins'),
+                    apiRequest('/collection-points')
+                ]);
+                allBins = bins;
+                allPoints = points;
+                populateCpDropdown();
+                renderBins(allBins);
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function populateCpDropdown() {
+            const select = document.getElementById('binCpSelect');
+            select.innerHTML = '<option value="">Select Collection Point...</option>' +
+                allPoints.map(p => `<option value="${p.id}">${p.pointCode} - ${p.location}</option>`).join('');
+        }
+
+        function renderBins(bins) {
+            document.getElementById('binsCountBadge').textContent = `${bins.length} Bins`;
+            const tbody = document.getElementById('binsTableBody');
+            if (bins.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No waste bins found matching criteria.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = bins.map(b => `
+                <tr>
+                    <td><span class="code-badge">${b.binCode}</span></td>
+                    <td class="primary-cell">${b.collectionPoint ? b.collectionPoint.pointCode + ' - ' + b.collectionPoint.location : '—'}</td>
+                    <td>${getWasteTag(b.wasteType)}</td>
+                    <td>${b.capacity} kg</td>
+                    <td><strong>${b.currentWaste}</strong> kg</td>
+                    <td>${getProgressBar(b.fillPercentage, b.currentWaste, b.capacity, 'kg')}</td>
+                    <td>${getStatusBadge(b.status)}</td>
+                    <td>${formatDateTime(b.lastEmptied)}</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.35rem;">
+                            ${b.currentWaste > 0 ? `
+                                <a href="transports.html?binId=${b.id}" class="btn btn-primary btn-sm" title="Pneumatic Evacuation">
+                                    ⚡
+                                </a>
+                            ` : ''}
+                            <button class="btn btn-secondary btn-sm" onclick="openEditBinModal(${b.id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteBin(${b.id}, '${b.binCode}')">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterBins() {
+            const type = document.getElementById('filterWasteType').value;
+            const status = document.getElementById('filterStatus').value;
+            let filtered = allBins;
+            if (type) {
+                filtered = filtered.filter(b => b.wasteType === type);
+            }
+            if (status) {
+                filtered = filtered.filter(b => b.status === status);
+            }
+            renderBins(filtered);
+        }
+
+        function openCreateBinModal() {
+            document.getElementById('binModalTitle').textContent = 'Register New Smart Bin';
+            document.getElementById('binId').value = '';
+            document.getElementById('binCode').value = '';
+            document.getElementById('binCode').disabled = false;
+            document.getElementById('binCpSelect').value = '';
+            document.getElementById('binWasteType').value = 'ORGANIC';
+            document.getElementById('binCapacity').value = '500';
+            document.getElementById('binCurrentWaste').value = '0';
+            openModal('binModal');
+        }
+
+        async function openEditBinModal(id) {
+            try {
+                const bin = await apiRequest(`/bins/${id}`);
+                document.getElementById('binModalTitle').textContent = 'Edit Smart Bin Telemetry';
+                document.getElementById('binId').value = bin.id;
+                document.getElementById('binCode').value = bin.binCode;
+                document.getElementById('binCpSelect').value = bin.collectionPoint ? bin.collectionPoint.id : '';
+                document.getElementById('binWasteType').value = bin.wasteType;
+                document.getElementById('binCapacity').value = bin.capacity;
+                document.getElementById('binCurrentWaste').value = bin.currentWaste;
+                openModal('binModal');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function saveBin(event) {
+            event.preventDefault();
+            const id = document.getElementById('binId').value;
+            const payload = {
+                binCode: document.getElementById('binCode').value.trim(),
+                collectionPointId: parseInt(document.getElementById('binCpSelect').value),
+                wasteType: document.getElementById('binWasteType').value,
+                capacity: parseFloat(document.getElementById('binCapacity').value),
+                currentWaste: parseFloat(document.getElementById('binCurrentWaste').value)
+            };
+
+            if (payload.currentWaste > payload.capacity) {
+                showToast('Current waste cannot exceed capacity!', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    await apiRequest(`/bins/${id}`, 'PUT', payload);
+                    showToast('Bin updated successfully!');
+                } else {
+                    await apiRequest('/bins', 'POST', payload);
+                    showToast('Smart bin registered successfully!');
+                }
+                closeModal('binModal');
+                initPage();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function deleteBin(id, code) {
+            if (!confirm(`Are you sure you want to delete Bin ${code}?`)) return;
+            try {
+                await apiRequest(`/bins/${id}`, 'DELETE');
+                showToast(`Bin ${code} deleted.`);
+                initPage();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

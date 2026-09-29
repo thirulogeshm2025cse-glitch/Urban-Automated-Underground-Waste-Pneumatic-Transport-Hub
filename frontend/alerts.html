@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Alerts Center | Urban Waste Transport Hub</title>
+    <meta name="description" content="Centralized rule-based automated alerts, pressure threshold warnings, and resolution desk.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>PNEUMA-HUB</h2>
+                    <span>Urban Automated Transport</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home Portal</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Live Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">Infrastructure Modules</div>
+                <a href="collection-points.html" class="nav-item">
+                    <span class="nav-icon">📍</span>
+                    <span>Collection Points</span>
+                </a>
+                <a href="bins.html" class="nav-item">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Smart Waste Bins</span>
+                </a>
+                <a href="pipelines.html" class="nav-item">
+                    <span class="nav-icon">🚇</span>
+                    <span>Pneumatic Pipelines</span>
+                </a>
+                <a href="hubs.html" class="nav-item">
+                    <span class="nav-icon">🏢</span>
+                    <span>Transport Hubs</span>
+                </a>
+
+                <div class="nav-section-title">Operations & Safety</div>
+                <a href="transports.html" class="nav-item">
+                    <span class="nav-icon">🚀</span>
+                    <span>Waste Transports</span>
+                </a>
+                <a href="processing.html" class="nav-item">
+                    <span class="nav-icon">♻️</span>
+                    <span>Waste Processing</span>
+                </a>
+                <a href="maintenance.html" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Maintenance</span>
+                </a>
+                <a href="alerts.html" class="nav-item active">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Active Alerts</span>
+                    <span class="nav-badge" id="sidebarAlertBadge" style="display:none;">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>MySQL Live</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--cyan-400); font-family: var(--font-mono);">8080/API</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Safety & Operations Alert Center</h1>
+                        <p class="page-subtitle">Autonomous rule-based monitoring: bin fill limits, vacuum pressure anomalies, and hub capacities</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-display" id="liveClock">--:--:--</div>
+                    <button class="btn-refresh" onclick="loadAlerts()">
+                        <span>🔄</span> Refresh Alerts
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🚨</span> System Safety Incident Log
+                            <span class="panel-title-badge" id="alertStatsBadge">0 Active</span>
+                        </div>
+                        <div class="panel-actions">
+                            <select id="filterActiveOnly" class="form-control" onchange="loadAlerts()" style="padding: 0.45rem 0.85rem;">
+                                <option value="active">Active Incidents Only</option>
+                                <option value="all">All Incidents (Include Resolved)</option>
+                            </select>
+                            <select id="filterSeverity" class="form-control" onchange="filterLocalAlerts()" style="padding: 0.45rem 0.85rem;">
+                                <option value="">All Severities</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="INFO">INFO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Incident ID</th>
+                                    <th>Alert Code</th>
+                                    <th>Equipment Unit</th>
+                                    <th>Severity</th>
+                                    <th>Incident Description</th>
+                                    <th>Triggered At</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alertsTableBody">
+                                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading alerts...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let alertsData = [];
+
+        async function loadAlerts() {
+            try {
+                const mode = document.getElementById('filterActiveOnly').value;
+                const endpoint = mode === 'active' ? '/alerts/active' : '/alerts';
+                alertsData = await apiRequest(endpoint);
+                filterLocalAlerts();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function filterLocalAlerts() {
+            const sev = document.getElementById('filterSeverity').value;
+            let filtered = alertsData;
+            if (sev) {
+                filtered = filtered.filter(a => a.severity === sev);
+            }
+            renderAlerts(filtered);
+        }
+
+        function renderAlerts(list) {
+            const activeCount = alertsData.filter(a => !a.resolved).length;
+            document.getElementById('alertStatsBadge').textContent = `${activeCount} Active / ${alertsData.length} Total`;
+
+            const tbody = document.getElementById('alertsTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--emerald-400); padding: 2rem;">✓ All equipment operating normally. No safety alerts found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(a => `
+                <tr>
+                    <td><span class="code-badge">ALT-${String(a.id).padStart(4, '0')}</span></td>
+                    <td><strong>${a.alertType}</strong></td>
+                    <td class="primary-cell"><span class="badge badge-inactive">${a.equipmentType}</span> <strong>${a.equipmentId}</strong></td>
+                    <td>${getStatusBadge(a.severity)}</td>
+                    <td style="max-width: 380px;">${a.message}</td>
+                    <td><small>${formatDateTime(a.createdAt)}</small></td>
+                    <td>
+                        ${a.resolved ? `
+                            <span class="badge badge-normal">Resolved</span>
+                            <br><small style="color:var(--text-muted); font-size:0.7rem;">${formatDateTime(a.resolvedAt)}</small>
+                        ` : `
+                            <span class="badge badge-critical"><span class="status-dot" style="background-color:var(--rose-400);"></span>Active</span>
+                        `}
+                    </td>
+                    <td style="text-align: right;">
+                        ${!a.resolved ? `
+                            <button class="btn btn-primary btn-sm" onclick="resolveAlert(${a.id})">
+                                Resolve ✓
+                            </button>
+                        ` : `<span style="color:var(--text-muted); font-size:0.75rem;">Archived</span>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function resolveAlert(id) {
+            try {
+                await apiRequest(`/alerts/${id}/resolve`, 'PUT');
+                showToast(`Alert ALT-${id} resolved.`);
+                loadAlerts();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAlerts);
+    </script>
+</body>
+</html>

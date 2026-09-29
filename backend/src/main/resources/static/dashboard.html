@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Dashboard | Urban Waste Pneumatic Transport Hub</title>
+    <meta name="description" content="Central Smart City Telemetry Dashboard for underground pneumatic waste management.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>PNEUMA-HUB</h2>
+                    <span>Urban Automated Transport</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home Portal</span>
+                </a>
+                <a href="dashboard.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>Live Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">Infrastructure Modules</div>
+                <a href="collection-points.html" class="nav-item">
+                    <span class="nav-icon">📍</span>
+                    <span>Collection Points</span>
+                </a>
+                <a href="bins.html" class="nav-item">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Smart Waste Bins</span>
+                </a>
+                <a href="pipelines.html" class="nav-item">
+                    <span class="nav-icon">🚇</span>
+                    <span>Pneumatic Pipelines</span>
+                </a>
+                <a href="hubs.html" class="nav-item">
+                    <span class="nav-icon">🏢</span>
+                    <span>Transport Hubs</span>
+                </a>
+
+                <div class="nav-section-title">Operations & Safety</div>
+                <a href="transports.html" class="nav-item">
+                    <span class="nav-icon">🚀</span>
+                    <span>Waste Transports</span>
+                </a>
+                <a href="processing.html" class="nav-item">
+                    <span class="nav-icon">♻️</span>
+                    <span>Waste Processing</span>
+                </a>
+                <a href="maintenance.html" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Maintenance</span>
+                </a>
+                <a href="alerts.html" class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Active Alerts</span>
+                    <span class="nav-badge" id="sidebarAlertBadge" style="display:none;">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>MySQL Live</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--cyan-400); font-family: var(--font-mono);">8080/API</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Operations Monitoring Dashboard</h1>
+                        <p class="page-subtitle">Real-time pneumatic pipeline telemetry, fill sensor levels, and safety thresholds</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-display" id="liveClock">--:--:--</div>
+                    <button class="btn-refresh" id="refreshBtn" onclick="loadDashboardData()">
+                        <span>🔄</span> Refresh Telemetry
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- Stat Cards Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Total Points</span>
+                            <div class="stat-icon">📍</div>
+                        </div>
+                        <div class="stat-value" id="statCollectionPoints">0</div>
+                        <div class="stat-meta">Smart Surface Kiosks</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Total Bins</span>
+                            <div class="stat-icon">🗑️</div>
+                        </div>
+                        <div class="stat-value" id="statTotalBins">0</div>
+                        <div class="stat-meta">Active Inlets</div>
+                    </div>
+
+                    <div class="stat-card alert-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Full Bins</span>
+                            <div class="stat-icon" style="background: rgba(244, 63, 94, 0.15); color: var(--rose-400);">⚠️</div>
+                        </div>
+                        <div class="stat-value" id="statFullBins" style="color: var(--rose-400);">0</div>
+                        <div class="stat-meta">Threshold &ge; 80%</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Pipelines</span>
+                            <div class="stat-icon">🚇</div>
+                        </div>
+                        <div class="stat-value" id="statActivePipelines">0</div>
+                        <div class="stat-meta">Pneumatic Tubes Active</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Active Hubs</span>
+                            <div class="stat-icon">🏢</div>
+                        </div>
+                        <div class="stat-value" id="statActiveHubs">0</div>
+                        <div class="stat-meta">Underground Terminals</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Waste Collected</span>
+                            <div class="stat-icon">📥</div>
+                        </div>
+                        <div class="stat-value" id="statWasteCollected">0 <span class="stat-unit">kg</span></div>
+                        <div class="stat-meta">Total Today</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Transported</span>
+                            <div class="stat-icon">🚀</div>
+                        </div>
+                        <div class="stat-value" id="statWasteTransported">0 <span class="stat-unit">kg</span></div>
+                        <div class="stat-meta">Pneumatic Transit</div>
+                    </div>
+
+                    <div class="stat-card alert-card">
+                        <div class="stat-card-header">
+                            <span class="stat-label">Active Alerts</span>
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--amber-400);">🚨</div>
+                        </div>
+                        <div class="stat-value" id="statActiveAlerts" style="color: var(--amber-400);">0</div>
+                        <div class="stat-meta">Immediate Attention</div>
+                    </div>
+                </div>
+
+                <!-- Simulation Quick Status Box -->
+                <div class="simulation-box">
+                    <div class="simulation-header">
+                        <div>
+                            <h3 style="font-size: 1.1rem; color: #fff;">Underground Pneumatic Transit Simulation</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">High-speed airflow velocity: 20–30 m/s (72–108 km/h) carrying capsule canisters under vacuum</p>
+                        </div>
+                        <a href="transports.html" class="btn btn-primary btn-sm">Dispatch New Transport ⚡</a>
+                    </div>
+                    <div class="simulation-pipeline-view">
+                        <div class="pipe-node">
+                            <div class="pipe-node-icon">🗑️</div>
+                            <div class="pipe-node-title">Smart Bins</div>
+                            <div class="pipe-node-sub">Inlet Chutes</div>
+                        </div>
+                        <div class="pipe-tube">
+                            <div class="pipe-capsule"></div>
+                        </div>
+                        <div class="pipe-node">
+                            <div class="pipe-node-icon">🚇</div>
+                            <div class="pipe-node-title">Pneumatic Pipeline</div>
+                            <div class="pipe-node-sub">Subsurface Vacuum</div>
+                        </div>
+                        <div class="pipe-tube">
+                            <div class="pipe-capsule" style="animation-delay: 1.5s;"></div>
+                        </div>
+                        <div class="pipe-node">
+                            <div class="pipe-node-icon">🏢</div>
+                            <div class="pipe-node-title">Central Hub</div>
+                            <div class="pipe-node-sub">Cyclone Separator</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Recent Safety Alerts -->
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🚨</span> Active System Alerts
+                            <span class="panel-title-badge" id="alertCountBadge">0 Active</span>
+                        </div>
+                        <div class="panel-actions">
+                            <a href="alerts.html" class="btn btn-secondary btn-sm">View All Alerts →</a>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Alert Type</th>
+                                    <th>Equipment</th>
+                                    <th>Severity</th>
+                                    <th>Message</th>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alertsTableBody">
+                                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading live alerts...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section: Smart Waste Bins Monitoring -->
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🗑️</span> Smart Waste Bins Telemetry
+                            <span class="panel-title-badge" id="binsCountBadge">0 Bins</span>
+                        </div>
+                        <div class="panel-actions">
+                            <a href="bins.html" class="btn btn-secondary btn-sm">Manage Bins →</a>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Bin ID</th>
+                                    <th>Collection Point</th>
+                                    <th>Waste Category</th>
+                                    <th>Fill Level (kg / max)</th>
+                                    <th>Status</th>
+                                    <th>Last Emptied</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="binsTableBody">
+                                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading bin telemetry...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2-Column Grid: Pipelines & Hubs -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+                    <!-- Pipeline Telemetry -->
+                    <div class="section-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <span>🚇</span> Pipeline Telemetry
+                            </div>
+                            <a href="pipelines.html" class="btn btn-secondary btn-sm">View Pipelines →</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Pipeline</th>
+                                        <th>Route</th>
+                                        <th>Pressure</th>
+                                        <th>Velocity</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pipelineTableBody">
+                                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading pipeline status...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Hub Capacity Monitoring -->
+                    <div class="section-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <span>🏢</span> Transport Hub Capacity
+                            </div>
+                            <a href="hubs.html" class="btn btn-secondary btn-sm">View Hubs →</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Hub</th>
+                                        <th>Location</th>
+                                        <th>Capacity Utilization</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hubTableBody">
+                                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading hub capacity...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        async function loadDashboardData() {
+            try {
+                // 1. Fetch Stats
+                const stats = await apiRequest('/dashboard/stats');
+                document.getElementById('statCollectionPoints').textContent = stats.totalCollectionPoints;
+                document.getElementById('statTotalBins').textContent = stats.totalWasteBins;
+                document.getElementById('statFullBins').textContent = stats.fullBins;
+                document.getElementById('statActivePipelines').textContent = stats.activePipelines;
+                document.getElementById('statActiveHubs').textContent = stats.activeTransportHubs;
+                document.getElementById('statWasteCollected').innerHTML = `${stats.wasteCollectedToday} <span class="stat-unit">kg</span>`;
+                document.getElementById('statWasteTransported').innerHTML = `${stats.wasteTransportedToday} <span class="stat-unit">kg</span>`;
+                document.getElementById('statActiveAlerts').textContent = stats.activeAlerts;
+
+                const alertBadge = document.getElementById('sidebarAlertBadge');
+                if (alertBadge) {
+                    alertBadge.textContent = stats.activeAlerts;
+                    alertBadge.style.display = stats.activeAlerts > 0 ? 'inline-block' : 'none';
+                }
+
+                // 2. Fetch Active Alerts
+                const alerts = await apiRequest('/alerts/active');
+                document.getElementById('alertCountBadge').textContent = `${alerts.length} Active`;
+                const alertsTbody = document.getElementById('alertsTableBody');
+                if (alerts.length === 0) {
+                    alertsTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--emerald-400); padding: 1.5rem;">✓ All systems operating within normal parameters. No active alerts.</td></tr>`;
+                } else {
+                    alertsTbody.innerHTML = alerts.slice(0, 5).map(a => `
+                        <tr>
+                            <td><span class="code-badge">${a.alertType}</span></td>
+                            <td class="primary-cell">${a.equipmentType}: <strong>${a.equipmentId}</strong></td>
+                            <td>${getStatusBadge(a.severity)}</td>
+                            <td>${a.message}</td>
+                            <td>${formatDateTime(a.createdAt)}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="resolveAlertDashboard(${a.id})">
+                                    Resolve ✓
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                // 3. Fetch Bins
+                const bins = await apiRequest('/bins');
+                document.getElementById('binsCountBadge').textContent = `${bins.length} Inlets`;
+                const binsTbody = document.getElementById('binsTableBody');
+                binsTbody.innerHTML = bins.slice(0, 7).map(b => `
+                    <tr>
+                        <td><span class="code-badge">${b.binCode}</span></td>
+                        <td class="primary-cell">${b.collectionPoint ? b.collectionPoint.pointCode + ' - ' + b.collectionPoint.location : '—'}</td>
+                        <td>${getWasteTag(b.wasteType)}</td>
+                        <td>${getProgressBar(b.fillPercentage, b.currentWaste, b.capacity, 'kg')}</td>
+                        <td>${getStatusBadge(b.status)}</td>
+                        <td>${formatDateTime(b.lastEmptied)}</td>
+                        <td>
+                            ${b.currentWaste > 0 ? `
+                                <a href="transports.html?binId=${b.id}" class="btn btn-primary btn-sm">
+                                    Evacuate ⚡
+                                </a>
+                            ` : `<span style="color:var(--text-muted); font-size:0.75rem;">Empty</span>`}
+                        </td>
+                    </tr>
+                `).join('');
+
+                // 4. Fetch Pipelines
+                const pipelines = await apiRequest('/pipelines');
+                const pipeTbody = document.getElementById('pipelineTableBody');
+                pipeTbody.innerHTML = pipelines.map(p => `
+                    <tr>
+                        <td><span class="code-badge">${p.pipelineCode}</span></td>
+                        <td><small>${p.sourcePoint} → ${p.destinationHub}</small></td>
+                        <td><strong>${p.airPressure}</strong> bar</td>
+                        <td>${p.airVelocity} m/s</td>
+                        <td>${getStatusBadge(p.status)}</td>
+                    </tr>
+                `).join('');
+
+                // 5. Fetch Hubs
+                const hubs = await apiRequest('/hubs');
+                const hubTbody = document.getElementById('hubTableBody');
+                hubTbody.innerHTML = hubs.map(h => `
+                    <tr>
+                        <td><span class="code-badge">${h.hubCode}</span><br><strong>${h.hubName}</strong></td>
+                        <td><small>${h.location}</small></td>
+                        <td>${getProgressBar(h.utilization, h.currentWaste, h.maximumCapacity, 'kg')}</td>
+                        <td>${getStatusBadge(h.status)}</td>
+                    </tr>
+                `).join('');
+
+            } catch (err) {
+                showToast('Failed to connect to backend: ' + err.message, 'error');
+            }
+        }
+
+        async function resolveAlertDashboard(id) {
+            try {
+                await apiRequest(`/alerts/${id}/resolve`, 'PUT');
+                showToast('Alert resolved successfully');
+                loadDashboardData();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+            // Polling telemetry every 10 seconds for real-time live simulation
+            setInterval(loadDashboardData, 10000);
+        });
+    </script>
+</body>
+</html>

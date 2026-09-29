@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waste Processing | Urban Waste Pneumatic Transport Hub</title>
+    <meta name="description" content="Central Hub Waste Segregation, Digestion, Recycling, and Material Recovery.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>PNEUMA-HUB</h2>
+                    <span>Urban Automated Transport</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home Portal</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Live Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">Infrastructure Modules</div>
+                <a href="collection-points.html" class="nav-item">
+                    <span class="nav-icon">📍</span>
+                    <span>Collection Points</span>
+                </a>
+                <a href="bins.html" class="nav-item">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Smart Waste Bins</span>
+                </a>
+                <a href="pipelines.html" class="nav-item">
+                    <span class="nav-icon">🚇</span>
+                    <span>Pneumatic Pipelines</span>
+                </a>
+                <a href="hubs.html" class="nav-item">
+                    <span class="nav-icon">🏢</span>
+                    <span>Transport Hubs</span>
+                </a>
+
+                <div class="nav-section-title">Operations & Safety</div>
+                <a href="transports.html" class="nav-item">
+                    <span class="nav-icon">🚀</span>
+                    <span>Waste Transports</span>
+                </a>
+                <a href="processing.html" class="nav-item active">
+                    <span class="nav-icon">♻️</span>
+                    <span>Waste Processing</span>
+                </a>
+                <a href="maintenance.html" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Maintenance</span>
+                </a>
+                <a href="alerts.html" class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Active Alerts</span>
+                    <span class="nav-badge" id="sidebarAlertBadge" style="display:none;">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>MySQL Live</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--cyan-400); font-family: var(--font-mono);">8080/API</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Waste Separation & Processing</h1>
+                        <p class="page-subtitle">Subsurface cyclone extraction, optical segregation, anaerobic bio-digestion, and recovery</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-display" id="liveClock">--:--:--</div>
+                    <button class="btn btn-primary" onclick="openProcessModal()">
+                        <span>+</span> Log Processing Batch
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>♻️</span> Processing & Treatment Operations
+                            <span class="panel-title-badge" id="procCountBadge">0 Batches</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Batch ID</th>
+                                    <th>Processing Hub</th>
+                                    <th>Waste Category</th>
+                                    <th>Processed Quantity</th>
+                                    <th>Treatment Method</th>
+                                    <th>Execution Date</th>
+                                    <th>Batch Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="procTableBody">
+                                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading processing records...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Processing Modal -->
+    <div class="modal-overlay" id="procModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Log Central Hub Processing Batch</h3>
+                <button class="modal-close" onclick="closeModal('procModal')">&times;</button>
+            </div>
+            <form id="procForm" onsubmit="saveProcessing(event)">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label" for="procHubSelect">Target Transport Hub *</label>
+                            <select id="procHubSelect" class="form-control" required>
+                                <option value="">Select Hub with stored waste...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="procWasteType">Waste Type *</label>
+                            <select id="procWasteType" class="form-control" required>
+                                <option value="ORGANIC">ORGANIC</option>
+                                <option value="RECYCLABLE">RECYCLABLE</option>
+                                <option value="PLASTIC">PLASTIC</option>
+                                <option value="PAPER">PAPER</option>
+                                <option value="GENERAL">GENERAL</option>
+                                <option value="HAZARDOUS">HAZARDOUS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="procQuantity">Quantity to Process (kg) *</label>
+                            <input type="number" step="0.1" min="0.1" id="procQuantity" class="form-control" placeholder="e.g. 500" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="procMethod">Processing Method *</label>
+                            <select id="procMethod" class="form-control" required>
+                                <option value="ANAEROBIC_BIO_DIGESTION">Anaerobic Bio-Digestion (Organic)</option>
+                                <option value="AUTOMATED_OPTICAL_SORTING">Automated Optical Sorting (Recyclable)</option>
+                                <option value="PELLETIZING_RECOVERY">Shredding & Pelletizing (Plastic)</option>
+                                <option value="HYDRAULIC_BALING">Hydraulic Compression & Baling (Paper)</option>
+                                <option value="REFUSE_DERIVED_FUEL_CONVERSION">Refuse-Derived Fuel Gasification (General)</option>
+                                <option value="HIGH_TEMP_PLASMA_GASIFICATION">High-Temp Plasma Vitrification (Hazardous)</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="procStatus">Status *</label>
+                            <select id="procStatus" class="form-control" required>
+                                <option value="COMPLETED">COMPLETED (Deducts waste from Hub immediately)</option>
+                                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                <option value="PENDING">PENDING</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('procModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveProcBtn">Execute Processing</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let hubsList = [];
+
+        async function loadProcessingData() {
+            try {
+                const [records, hubs] = await Promise.all([
+                    apiRequest('/processing'),
+                    apiRequest('/hubs')
+                ]);
+                hubsList = hubs;
+                populateHubDropdown();
+                renderProcessing(records);
+
+                // Check query param (?hubId=...)
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryHubId = urlParams.get('hubId');
+                if (queryHubId) {
+                    openProcessModal();
+                    document.getElementById('procHubSelect').value = queryHubId;
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function populateHubDropdown() {
+            const sel = document.getElementById('procHubSelect');
+            sel.innerHTML = '<option value="">Select Hub...</option>' +
+                hubsList.map(h => `
+                    <option value="${h.id}">
+                        ${h.hubCode} - ${h.hubName} (Holding: ${h.currentWaste} kg / ${h.maximumCapacity} kg)
+                    </option>
+                `).join('');
+        }
+
+        function renderProcessing(records) {
+            document.getElementById('procCountBadge').textContent = `${records.length} Batches`;
+            const tbody = document.getElementById('procTableBody');
+            if (records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No processing batches recorded yet.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = records.map(r => `
+                <tr>
+                    <td><span class="code-badge">PRC-${String(r.id).padStart(4, '0')}</span></td>
+                    <td class="primary-cell">${r.hub ? r.hub.hubCode + ' - ' + r.hub.hubName : '—'}</td>
+                    <td>${getWasteTag(r.wasteType)}</td>
+                    <td><strong>${r.quantity}</strong> kg</td>
+                    <td>${r.processingMethod ? r.processingMethod.replace(/_/g, ' ') : '—'}</td>
+                    <td>${formatDateTime(r.processingDate)}</td>
+                    <td>${getStatusBadge(r.status)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function openProcessModal() {
+            document.getElementById('procHubSelect').value = '';
+            document.getElementById('procWasteType').value = 'ORGANIC';
+            document.getElementById('procQuantity').value = '';
+            document.getElementById('procMethod').value = 'ANAEROBIC_BIO_DIGESTION';
+            document.getElementById('procStatus').value = 'COMPLETED';
+            openModal('procModal');
+        }
+
+        async function saveProcessing(event) {
+            event.preventDefault();
+            const hubId = parseInt(document.getElementById('procHubSelect').value);
+            const wasteType = document.getElementById('procWasteType').value;
+            const quantity = parseFloat(document.getElementById('procQuantity').value);
+            const processingMethod = document.getElementById('procMethod').value;
+            const status = document.getElementById('procStatus').value;
+
+            try {
+                await apiRequest('/processing', 'POST', {
+                    hubId, wasteType, quantity, processingMethod, status
+                });
+                showToast(`Batch processed successfully! Stored waste deducted from Hub.`);
+                closeModal('procModal');
+                loadProcessingData();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProcessingData);
+    </script>
+</body>
+</html>

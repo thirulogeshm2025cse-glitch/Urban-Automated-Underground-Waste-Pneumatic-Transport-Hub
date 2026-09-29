@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Hubs | Urban Waste Pneumatic Transport Hub</title>
+    <meta name="description" content="Centralized underground waste terminals, compactor vaults, and capacity monitoring.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>PNEUMA-HUB</h2>
+                    <span>Urban Automated Transport</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home Portal</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Live Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">Infrastructure Modules</div>
+                <a href="collection-points.html" class="nav-item">
+                    <span class="nav-icon">📍</span>
+                    <span>Collection Points</span>
+                </a>
+                <a href="bins.html" class="nav-item">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Smart Waste Bins</span>
+                </a>
+                <a href="pipelines.html" class="nav-item">
+                    <span class="nav-icon">🚇</span>
+                    <span>Pneumatic Pipelines</span>
+                </a>
+                <a href="hubs.html" class="nav-item active">
+                    <span class="nav-icon">🏢</span>
+                    <span>Transport Hubs</span>
+                </a>
+
+                <div class="nav-section-title">Operations & Safety</div>
+                <a href="transports.html" class="nav-item">
+                    <span class="nav-icon">🚀</span>
+                    <span>Waste Transports</span>
+                </a>
+                <a href="processing.html" class="nav-item">
+                    <span class="nav-icon">♻️</span>
+                    <span>Waste Processing</span>
+                </a>
+                <a href="maintenance.html" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Maintenance</span>
+                </a>
+                <a href="alerts.html" class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Active Alerts</span>
+                    <span class="nav-badge" id="sidebarAlertBadge" style="display:none;">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>MySQL Live</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--cyan-400); font-family: var(--font-mono);">8080/API</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Transport Hub Management</h1>
+                        <p class="page-subtitle">Underground central vacuum receiving stations, compactor silos, and capacity utilization</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-display" id="liveClock">--:--:--</div>
+                    <button class="btn btn-primary" onclick="openCreateHubModal()">
+                        <span>+</span> Register Transport Hub
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🏢</span> Central Receiving Terminals
+                            <span class="panel-title-badge" id="hubsCountBadge">0 Hubs</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Hub Code</th>
+                                    <th>Hub Name</th>
+                                    <th>Subsurface Location</th>
+                                    <th>Current Waste</th>
+                                    <th>Max Capacity</th>
+                                    <th style="min-width: 180px;">Utilization Level</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hubTableBody">
+                                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading transport hubs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create / Edit Hub Modal -->
+    <div class="modal-overlay" id="hubModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="hubModalTitle">Register New Transport Hub</h3>
+                <button class="modal-close" onclick="closeModal('hubModal')">&times;</button>
+            </div>
+            <form id="hubForm" onsubmit="saveHub(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="hubId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="hubCode">Hub Code *</label>
+                            <input type="text" id="hubCode" class="form-control" placeholder="e.g. HUB003" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="hubStatus">Status *</label>
+                            <select id="hubStatus" class="form-control" required>
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="STANDBY">STANDBY</option>
+                                <option value="MAINTENANCE">MAINTENANCE</option>
+                                <option value="FULL">FULL</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="hubName">Hub Facility Name *</label>
+                            <input type="text" id="hubName" class="form-control" placeholder="e.g. Westside Automated Compactor Terminal" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="hubLocation">Subsurface Vault Location *</label>
+                            <input type="text" id="hubLocation" class="form-control" placeholder="e.g. Sub-level 3 West Metro Utility Complex" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="maxCapacity">Maximum Capacity (kg) *</label>
+                            <input type="number" step="10" min="100" id="maxCapacity" class="form-control" placeholder="e.g. 10000" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="hubCurrentWaste">Current Waste (kg) *</label>
+                            <input type="number" step="1" min="0" id="hubCurrentWaste" class="form-control" placeholder="e.g. 2500" required>
+                            <small style="color: var(--text-muted); font-size: 0.72rem;">Utilization &gt;80% triggers Warning, &gt;95% Critical</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('hubModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveHubBtn">Save Hub</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let allHubs = [];
+
+        async function loadHubs() {
+            try {
+                allHubs = await apiRequest('/hubs');
+                renderHubs(allHubs);
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function renderHubs(hubs) {
+            document.getElementById('hubsCountBadge').textContent = `${hubs.length} Hubs`;
+            const tbody = document.getElementById('hubTableBody');
+            if (hubs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No transport hubs found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = hubs.map(h => `
+                <tr>
+                    <td><span class="code-badge">${h.hubCode}</span></td>
+                    <td class="primary-cell">${h.hubName}</td>
+                    <td><small>${h.location}</small></td>
+                    <td><strong>${h.currentWaste}</strong> kg</td>
+                    <td>${h.maximumCapacity} kg</td>
+                    <td>${getProgressBar(h.utilization, h.currentWaste, h.maximumCapacity, 'kg')}</td>
+                    <td>${getStatusBadge(h.status)}</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.35rem;">
+                            <a href="processing.html?hubId=${h.id}" class="btn btn-primary btn-sm" title="Process Waste">
+                                ♻️ Process
+                            </a>
+                            <button class="btn btn-secondary btn-sm" onclick="openEditHubModal(${h.id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteHub(${h.id}, '${h.hubCode}')">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openCreateHubModal() {
+            document.getElementById('hubModalTitle').textContent = 'Register New Transport Hub';
+            document.getElementById('hubId').value = '';
+            document.getElementById('hubCode').value = '';
+            document.getElementById('hubCode').disabled = false;
+            document.getElementById('hubName').value = '';
+            document.getElementById('hubLocation').value = '';
+            document.getElementById('maxCapacity').value = '10000';
+            document.getElementById('hubCurrentWaste').value = '0';
+            document.getElementById('hubStatus').value = 'ACTIVE';
+            openModal('hubModal');
+        }
+
+        async function openEditHubModal(id) {
+            try {
+                const h = await apiRequest(`/hubs/${id}`);
+                document.getElementById('hubModalTitle').textContent = 'Edit Transport Hub Telemetry';
+                document.getElementById('hubId').value = h.id;
+                document.getElementById('hubCode').value = h.hubCode;
+                document.getElementById('hubName').value = h.hubName;
+                document.getElementById('hubLocation').value = h.location;
+                document.getElementById('maxCapacity').value = h.maximumCapacity;
+                document.getElementById('hubCurrentWaste').value = h.currentWaste;
+                document.getElementById('hubStatus').value = h.status;
+                openModal('hubModal');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function saveHub(event) {
+            event.preventDefault();
+            const id = document.getElementById('hubId').value;
+            const payload = {
+                hubCode: document.getElementById('hubCode').value.trim(),
+                hubName: document.getElementById('hubName').value.trim(),
+                location: document.getElementById('hubLocation').value.trim(),
+                maximumCapacity: parseFloat(document.getElementById('maxCapacity').value),
+                currentWaste: parseFloat(document.getElementById('hubCurrentWaste').value),
+                status: document.getElementById('hubStatus').value
+            };
+
+            try {
+                if (id) {
+                    await apiRequest(`/hubs/${id}`, 'PUT', payload);
+                    showToast('Transport Hub updated!');
+                } else {
+                    await apiRequest('/hubs', 'POST', payload);
+                    showToast('Transport Hub registered!');
+                }
+                closeModal('hubModal');
+                loadHubs();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function deleteHub(id, code) {
+            if (!confirm(`Are you sure you want to delete Hub ${code}?`)) return;
+            try {
+                await apiRequest(`/hubs/${id}`, 'DELETE');
+                showToast(`Hub ${code} deleted.`);
+                loadHubs();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadHubs);
+    </script>
+</body>
+</html>

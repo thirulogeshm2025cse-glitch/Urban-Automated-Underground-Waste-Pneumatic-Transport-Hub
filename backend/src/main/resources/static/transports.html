@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waste Transports & Simulation | Urban Waste Hub</title>
+    <meta name="description" content="Pneumatic waste evacuation simulator and transport dispatch ledger.">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .dispatch-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid var(--border-color-glow);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+        }
+        .dispatch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            align-items: flex-end;
+            margin-top: 1.25rem;
+        }
+        .anim-capsule-tube {
+            height: 16px;
+            background: #0f172a;
+            border: 2px solid var(--border-color);
+            border-radius: 9999px;
+            position: relative;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            display: none;
+        }
+        .anim-capsule-tube.active {
+            display: block;
+        }
+        .active-slug {
+            width: 70px;
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #00f2fe, #3b82f6);
+            border-radius: 9999px;
+            position: absolute;
+            box-shadow: 0 0 15px #38bdf8;
+            animation: fastCapsule 1.5s infinite ease-in-out;
+        }
+        @keyframes fastCapsule {
+            0% { left: -80px; }
+            100% { left: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>PNEUMA-HUB</h2>
+                    <span>Urban Automated Transport</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home Portal</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Live Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">Infrastructure Modules</div>
+                <a href="collection-points.html" class="nav-item">
+                    <span class="nav-icon">📍</span>
+                    <span>Collection Points</span>
+                </a>
+                <a href="bins.html" class="nav-item">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Smart Waste Bins</span>
+                </a>
+                <a href="pipelines.html" class="nav-item">
+                    <span class="nav-icon">🚇</span>
+                    <span>Pneumatic Pipelines</span>
+                </a>
+                <a href="hubs.html" class="nav-item">
+                    <span class="nav-icon">🏢</span>
+                    <span>Transport Hubs</span>
+                </a>
+
+                <div class="nav-section-title">Operations & Safety</div>
+                <a href="transports.html" class="nav-item active">
+                    <span class="nav-icon">🚀</span>
+                    <span>Waste Transports</span>
+                </a>
+                <a href="processing.html" class="nav-item">
+                    <span class="nav-icon">♻️</span>
+                    <span>Waste Processing</span>
+                </a>
+                <a href="maintenance.html" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Maintenance</span>
+                </a>
+                <a href="alerts.html" class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Active Alerts</span>
+                    <span class="nav-badge" id="sidebarAlertBadge" style="display:none;">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>MySQL Live</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--cyan-400); font-family: var(--font-mono);">8080/API</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Pneumatic Transport Simulation & Logs</h1>
+                        <p class="page-subtitle">Subsurface vacuum capsule propulsion, automatic bin evacuation, and transfer audit</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-display" id="liveClock">--:--:--</div>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- Dispatch Simulation Box -->
+                <div class="dispatch-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h2 style="font-size: 1.25rem; font-weight: 700; color: #fff;">
+                                🚀 Automated Pneumatic Transport Dispatcher
+                            </h2>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                Select source bin, pipeline conduit, and receiving hub to initiate high-speed pneumatic evacuation.
+                            </p>
+                        </div>
+                        <span class="badge badge-normal" id="simulatorStatusBadge">⚡ Pneumatic System Ready</span>
+                    </div>
+
+                    <form id="dispatchForm" onsubmit="executeTransport(event)">
+                        <div class="dispatch-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="selBin">1. Source Smart Bin *</label>
+                                <select id="selBin" class="form-control" onchange="onBinSelected()" required>
+                                    <option value="">Choose Bin to Evacuate...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="selPipeline">2. Pneumatic Pipeline *</label>
+                                <select id="selPipeline" class="form-control" required>
+                                    <option value="">Select Conduit...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="selHub">3. Destination Hub *</label>
+                                <select id="selHub" class="form-control" required>
+                                    <option value="">Select Target Hub...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="transQuantity">4. Quantity (kg)</label>
+                                <input type="number" step="0.1" min="0.1" id="transQuantity" class="form-control" placeholder="Full Bin Waste">
+                            </div>
+
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary" id="btnDispatch" style="height: 42px; width: 100%;">
+                                    ⚡ Dispatch Transport
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Real-time Pneumatic Capsule Flow Graphic -->
+                    <div class="anim-capsule-tube" id="capsuleAnimTube">
+                        <div class="active-slug"></div>
+                    </div>
+                </div>
+
+                <!-- Transport Records Table -->
+                <div class="section-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>📜</span> Pneumatic Transport History
+                            <span class="panel-title-badge" id="transCountBadge">0 Records</span>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="loadPageData()">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Transport ID</th>
+                                    <th>Source Bin</th>
+                                    <th>Pipeline Route</th>
+                                    <th>Destination Hub</th>
+                                    <th>Waste Category</th>
+                                    <th>Quantity</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transTableBody">
+                                <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Loading transport history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let binsList = [];
+        let pipesList = [];
+        let hubsList = [];
+
+        async function loadPageData() {
+            try {
+                const [transports, bins, pipes, hubs] = await Promise.all([
+                    apiRequest('/transports'),
+                    apiRequest('/bins'),
+                    apiRequest('/pipelines'),
+                    apiRequest('/hubs')
+                ]);
+                binsList = bins;
+                pipesList = pipes;
+                hubsList = hubs;
+
+                populateDropdowns();
+                renderTransports(transports);
+
+                // Auto select bin if passed in query param (?binId=...)
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryBinId = urlParams.get('binId');
+                if (queryBinId) {
+                    const sel = document.getElementById('selBin');
+                    sel.value = queryBinId;
+                    onBinSelected();
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function populateDropdowns() {
+            // Populate Bins
+            const selBin = document.getElementById('selBin');
+            selBin.innerHTML = '<option value="">Choose Bin to Evacuate...</option>' +
+                binsList.map(b => `
+                    <option value="${b.id}" ${b.currentWaste <= 0 ? 'disabled' : ''}>
+                        ${b.binCode} (${b.wasteType}) - ${b.currentWaste} kg / ${b.capacity} kg [${b.status}]
+                    </option>
+                `).join('');
+
+            // Populate Pipelines
+            const selPipeline = document.getElementById('selPipeline');
+            selPipeline.innerHTML = '<option value="">Select Conduit...</option>' +
+                pipesList.map(p => `
+                    <option value="${p.id}" ${p.status !== 'ACTIVE' ? 'disabled' : ''}>
+                        ${p.pipelineCode} (${p.sourcePoint} → ${p.destinationHub}) [${p.status}]
+                    </option>
+                `).join('');
+
+            // Populate Hubs
+            const selHub = document.getElementById('selHub');
+            selHub.innerHTML = '<option value="">Select Target Hub...</option>' +
+                hubsList.map(h => {
+                    const avail = Math.round((h.maximumCapacity - h.currentWaste) * 10) / 10;
+                    return `
+                        <option value="${h.id}" ${avail <= 0 ? 'disabled' : ''}>
+                            ${h.hubCode} - ${h.hubName} (Avail: ${avail} kg)
+                        </option>
+                    `;
+                }).join('');
+        }
+
+        function onBinSelected() {
+            const binId = parseInt(document.getElementById('selBin').value);
+            const bin = binsList.find(b => b.id === binId);
+            if (bin) {
+                document.getElementById('transQuantity').value = bin.currentWaste;
+                document.getElementById('transQuantity').max = bin.currentWaste;
+            }
+        }
+
+        function renderTransports(list) {
+            document.getElementById('transCountBadge').textContent = `${list.length} Records`;
+            const tbody = document.getElementById('transTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No waste transports recorded yet. Dispatch one above!</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(t => `
+                <tr>
+                    <td><span class="code-badge">TR-${String(t.id).padStart(4, '0')}</span></td>
+                    <td class="primary-cell">${t.bin ? t.bin.binCode : '—'}</td>
+                    <td><small>${t.pipeline ? t.pipeline.pipelineCode + ' (' + t.pipeline.sourcePoint + ')' : '—'}</small></td>
+                    <td><strong>${t.hub ? t.hub.hubCode + ' - ' + t.hub.hubName : '—'}</strong></td>
+                    <td>${getWasteTag(t.wasteType)}</td>
+                    <td><strong>${t.quantity}</strong> kg</td>
+                    <td><small>${formatDateTime(t.startTime)}</small></td>
+                    <td><small>${formatDateTime(t.endTime)}</small></td>
+                    <td>${getStatusBadge(t.status)}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function executeTransport(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btnDispatch');
+            const tube = document.getElementById('capsuleAnimTube');
+            const binId = parseInt(document.getElementById('selBin').value);
+            const pipelineId = parseInt(document.getElementById('selPipeline').value);
+            const hubId = parseInt(document.getElementById('selHub').value);
+            const qtyVal = document.getElementById('transQuantity').value;
+            const quantity = qtyVal ? parseFloat(qtyVal) : null;
+
+            btn.disabled = true;
+            btn.innerHTML = '⚡ Propelling Capsule...';
+            tube.classList.add('active');
+
+            try {
+                const payload = { binId, pipelineId, hubId, quantity };
+                const res = await apiRequest('/transports', 'POST', payload);
+
+                setTimeout(() => {
+                    tube.classList.remove('active');
+                    btn.disabled = false;
+                    btn.innerHTML = '⚡ Dispatch Transport';
+                    showToast(`Pneumatic Transfer Complete! ${res.quantity} kg of ${res.wasteType} transported to ${res.hub.hubCode}.`);
+                    loadPageData();
+                }, 1200);
+
+            } catch (err) {
+                tube.classList.remove('active');
+                btn.disabled = false;
+                btn.innerHTML = '⚡ Dispatch Transport';
+                showToast(err.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPageData);
+    </script>
+</body>
+</html>
